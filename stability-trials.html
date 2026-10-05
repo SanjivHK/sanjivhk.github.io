@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stability Trials</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: one centred column; during a trial the page holds the stimulus and two keys and nothing else. */
+:root{
+  color-scheme:light;
+  --paper:#EFF2F4; --sheet:#FFFFFF; --ink:#14222E; --muted:#5B6C79; --rule:#C7D3DB;
+  --rule-soft:#DEE6EB; --accent:#0A6EA4; --steel:#C4501C;
+  --ok:#186B47; --ok-bg:#E0F0E7; --no:#A82B20; --no-bg:#FAE3E0; --shade:#F5F8F9;
+  --f-disp:"Saira Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",-apple-system,Segoe UI,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0D151E; --sheet:#16212C; --ink:#D9E4EC; --muted:#8497A6; --rule:#2B3B49;
+    --rule-soft:#223140; --accent:#58B7EB; --steel:#FF8C4F;
+    --ok:#4FD293; --ok-bg:#12312A; --no:#FF7466; --no-bg:#361B1C; --shade:#111C26;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0D151E; --sheet:#16212C; --ink:#D9E4EC; --muted:#8497A6; --rule:#2B3B49;
+  --rule-soft:#223140; --accent:#58B7EB; --steel:#FF8C4F;
+  --ok:#4FD293; --ok-bg:#12312A; --no:#FF7466; --no-bg:#361B1C; --shade:#111C26;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}   /* .fix sets display:grid, which would otherwise beat [hidden] */
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55}
+.wrap{max-width:820px;margin:0 auto;padding-block:22px 44px;padding-left:18px;padding-right:18px}
+.wide{max-width:1060px}
+h1{font-family:var(--f-disp);font-weight:700;font-size:clamp(30px,6vw,46px);margin:0;line-height:.95}
+h2{font-family:var(--f-disp);font-weight:700;font-size:13px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 10px}
+p{margin:0 0 12px}
+.lead{color:var(--muted);max-width:62ch}
+.card{background:var(--sheet);border:1px solid var(--rule);padding:20px 22px;margin-bottom:16px}
+code{font-family:var(--f-data);font-size:12.5px}
+
+button{font-family:var(--f-body);font-size:14px;cursor:pointer}
+.btn{font-family:var(--f-disp);font-weight:600;font-size:16px;letter-spacing:.04em;text-transform:uppercase;
+  padding:12px 22px;border-radius:3px;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper)}
+.btn.ghost{background:none;color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* ---- trial screen ---- */
+.bar{height:5px;background:var(--rule-soft);border-radius:3px;overflow:hidden;margin-bottom:9px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.meta{display:flex;justify-content:space-between;font-family:var(--f-data);font-size:10.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.ask{font-family:var(--f-disp);font-weight:700;font-size:clamp(22px,4vw,30px);letter-spacing:.01em;
+  text-align:center;margin:0 0 3px;text-wrap:balance}
+.ask small{display:block;font-family:var(--f-body);font-weight:400;font-size:13.5px;
+  letter-spacing:0;text-transform:none;color:var(--muted);margin-top:5px}
+.stage{background:var(--sheet);border:1.5px solid var(--ink);margin:16px 0 18px}
+.stage .inner{border:1px solid var(--rule);margin:7px;position:relative}
+svg.draw{display:block;width:100%;height:auto}
+svg.draw text{font-family:var(--f-data);font-weight:600}
+.fix{position:absolute;inset:0;display:grid;place-items:center;background:var(--sheet);
+  font-family:var(--f-data);font-size:38px;color:var(--rule)}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.keys button{font-family:var(--f-disp);font-weight:600;font-size:clamp(17px,3vw,22px);letter-spacing:.03em;
+  padding:17px 10px 13px;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);border-radius:4px}
+.keys button:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.keys button:disabled{opacity:.3;cursor:default}
+.keys kbd{display:block;font-family:var(--f-data);font-size:10px;font-weight:400;letter-spacing:.1em;
+  color:var(--muted);margin-top:5px;text-transform:none}
+.keys button:hover:not(:disabled) kbd{color:var(--paper)}
+
+/* ---- results ---- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:16px}
+.tiles div{background:var(--sheet);border:1px solid var(--rule);padding:12px 14px}
+.tiles span{display:block;font-family:var(--f-data);font-size:9px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted)}
+.tiles b{font-family:var(--f-data);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;font-size:12.4px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
+th{font-family:var(--f-data);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--rule)}
+td.n{font-family:var(--f-data);font-variant-numeric:tabular-nums;text-align:right}
+td.y{color:var(--ok)} td.x{color:var(--no);font-weight:600}
+.scroll{overflow-x:auto;border:1px solid var(--rule);background:var(--sheet);padding:4px 6px}
+textarea{width:100%;height:150px;font-family:var(--f-data);font-size:11px;background:var(--sheet);
+  color:var(--ink);border:1px solid var(--rule);padding:9px;border-radius:3px}
+.rev{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.rev .c{background:var(--sheet);border:1px solid var(--rule)}
+.rev .c svg{display:block;width:100%;height:auto;border-bottom:1px solid var(--rule-soft)}
+.rev .c .b{padding:10px 12px}
+.rev .c h3{font-family:var(--f-data);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 7px}
+.rev .c .l{display:flex;justify-content:space-between;gap:8px;font-size:12.3px;padding:3px 0}
+.rev .c .l b{font-weight:600}
+.rev details{margin-top:8px;font-size:12.2px;color:var(--muted)}
+.rev summary{font-family:var(--f-data);font-size:10px;letter-spacing:.09em;text-transform:uppercase;cursor:pointer}
+.rev details div{margin-top:7px}
+input[type=text]{font-family:var(--f-body);font-size:14px;padding:9px 11px;border:1px solid var(--rule);
+  border-radius:3px;background:var(--sheet);color:var(--ink);min-width:200px}
+label{font-family:var(--f-data);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.note{font-size:12.4px;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap"></div>
+
+<script>
+const CASES = [{"id":15,"shape":"TB","m":3,"j":3,"r":3,"coords":{"A":[0,0],"B":[6,0],"C":[0,4]},"members":[["A","B"],["B","C"],["C","A"]],"supports":[["A","roller",270],["B","roller",90],["C","roller",270]],"rcols":[["A",[1.0,-1.8369701987210297e-16]],["B",[-1.0,6.123233995736766e-17]],["C",[1.0,-1.8369701987210297e-16]]],"explain":"<b>Internal:</b> m = 3 and 2j \u2212 3 = 3, so m = 2j \u2212 3. The three members close a triangle, so the arrangement is proper and the members alone form one rigid body \u2014 <b>internally stable</b>. <b>External:</b> r = 3 meets the count, but every reaction line is parallel, so nothing resists translation across them. Joints <b>A, B, C</b> can still move \u2014 <b>externally unstable</b>. <b>Degree:</b> m + r = 3 + 3 = 6 and 2j = 6, so m + r \u2212 2j = 0. The count passes, but m + r \u2265 2j is necessary and not sufficient: the external instability above leaves a mechanism. The truss is <b>unstable</b>, and no degree of indeterminacy applies.","internal_stable":true,"external_stable":false,"answer_internal":"stable","answer_external":"unstable"},{"id":22,"shape":"TE","m":3,"j":3,"r":4,"coords":{"A":[0,0],"B":[5,0],"C":[1,4]},"members":[["A","B"],["B","C"],["C","A"]],"supports":[["A","roller",0],["B","roller",0],["C","pin",180]],"rcols":[["A",[-0.0,1.0]],["B",[-0.0,1.0]],["C",[1.0,0.0]],["C",[0.0,1.0]]],"explain":"<b>Internal:</b> m = 3 and 2j \u2212 3 = 3, so m = 2j \u2212 3. The three members close a triangle, so the arrangement is proper and the members alone form one rigid body \u2014 <b>internally stable</b>. <b>External:</b> Restraining one rigid body needs r \u2265 3, and r = 4. The reaction lines are neither all parallel nor all concurrent, and every piece of the truss is held \u2014 <b>externally stable</b>. <b>Degree:</b> m + r = 3 + 4 = 7 and 2j = 6, so m + r \u2212 2j = 1. The truss is stable, so the count is the real answer: it is <b>statically indeterminate to degree 1</b>.","internal_stable":true,"external_stable":true,"answer_internal":"stable","answer_external":"stable"},{"id":24,"shape":"TJ","m":3,"j":3,"r":3,"coords":{"A":[0,0],"B":[4,0],"C":[2,2]},"members":[["A","B"],["B","C"],["C","A"]],"supports":[["A","roller",315],["B","roller",45],["C","roller",180]],"rcols":[["A",[0.7071067811865477,0.7071067811865474]],["B",[-0.7071067811865475,0.7071067811865476]],["C",[-1.2246467991473532e-16,-1.0]]],"explain":"<b>Internal:</b> m = 3 and 2j \u2212 3 = 3, so m = 2j \u2212 3. The three members close a triangle, so the arrangement is proper and the members alone form one rigid body \u2014 <b>internally stable</b>. <b>External:</b> r = 3 meets the count, but all the reaction lines meet at one point, so nothing resists rotation about it. Joints <b>A, B</b> can still move \u2014 <b>externally unstable</b>. <b>Degree:</b> m + r = 3 + 3 = 6 and 2j = 6, so m + r \u2212 2j = 0. The count passes, but m + r \u2265 2j is necessary and not sufficient: the external instability above leaves a mechanism. The truss is <b>unstable</b>, and no degree of indeterminacy applies.","internal_stable":true,"external_stable":false,"answer_internal":"stable","answer_external":"unstable"},{"id":25,"shape":"TA","m":3,"j":3,"r":5,"coords":{"A":[0,0],"B":[6,0],"C":[3,4]},"members":[["A","B"],["B","C"],["C","A"]],"supports":[["A","pin",0],["B","pin",0],["C","roller",180]],"rcols":[["A",[1.0,0.0]],["A",[0.0,1.0]],["B",[1.0,0.0]],["B",[0.0,1.0]],["C",[-1.2246467991473532e-16,-1.0]]],"explain":"<b>Internal:</b> m = 3 and 2j \u2212 3 = 3, so m = 2j \u2212 3. The three members close a triangle, so the arrangement is proper and the members alone form one rigid body \u2014 <b>internally stable</b>. <b>External:</b> Restraining one rigid body needs r \u2265 3, and r = 5. The reaction lines are neither all parallel nor all concurrent, and every piece of the truss is held \u2014 <b>externally stable</b>. <b>Degree:</b> m + r = 3 + 5 = 8 and 2j = 6, so m + r \u2212 2j = 2. The truss is stable, so the count is the real answer: it is <b>statically indeterminate to degree 2</b>.","internal_stable":true,"external_stable":true,"answer_internal":"stable","answer_external":"stable"},{"id":28,"shape":"TH","m":3,"j":3,"r":6,"coords":{"A":[0,0],"B":[6,0],"C":[3,5]},"members":[["A","B"],["B","C"],["C","A"]],"supports":[["A","pin",0],["B","pin",0],["C","pin",180]],"rcols":[["A",[1.0,0.0]],["A",[0.0,1.0]],["B",[1.0,0.0]],["B",[0.0,1.0]],["C",[1.0,0.0]],["C",[0.0,1.0]]],"explain":"<b>Internal:</b> m = 3 and 2j \u2212 3 = 3, so m = 2j \u2212 3. The three members close a triangle, so the arrangement is proper and the members alone form one rigid body \u2014 <b>internally stable</b>. <b>External:</b> Restraining one rigid body needs r \u2265 3, and r = 6. The reaction lines are neither all parallel nor all concurrent, and every piece of the truss is held \u2014 <b>externally stable</b>. <b>Degree:</b> m + r = 3 + 6 = 9 and 2j = 6, so m + r \u2212 2j = 3. The truss is stable, so the count is the real answer: it is <b>statically indeterminate to degree 3</b>.","internal_stable":true,"external_stable":true,"answer_internal":"stable","answer_external":"stable"},{"id":36,"shape":"BB","m":2,"j":3,"r":3,"coords":{"A":[0,3],"B":[3,0],"C":[6,3]},"members":[["A","B"],["B","C"]],"supports":[["A","roller",180],["B","roller",0],["C","roller",180]],"rcols":[["A",[-1.2246467991473532e-16,-1.0]],["B",[-0.0,1.0]],["C",[-1.2246467991473532e-16,-1.0]]],"explain":"<b>Internal:</b> m = 2 and 2j \u2212 3 = 3, so m &lt; 2j \u2212 3. Two bars meeting at a joint hinge freely, so the members alone are not a rigid body \u2014 <b>internally unstable</b>. The truss is really two rigid pieces joined by an internal hinge, which is one equation of condition: e<sub>c</sub> = 1. <b>External:</b> Restraining every rigid piece needs r \u2265 3 + e<sub>c</sub> = 4, but r = 3. That leaves 1 rigid-body motion free. Joints <b>A, B, C</b> can still move \u2014 <b>externally unstable</b>. <b>Degree:</b> m + r = 2 + 3 = 5 and 2j = 6, so m + r \u2212 2j = \u22121. A negative count means fewer unknowns than the 2j joint equations \u2014 the truss cannot be in equilibrium under general loading. It is <b>unstable</b>, and no degree of indeterminacy applies.","internal_stable":false,"external_stable":false,"answer_internal":"unstable","answer_external":"unstable"},{"id":39,"shape":"BC","m":2,"j":3,"r":4,"coords":{"A":[0,0],"B":[4,0],"C":[4,3]},"members":[["A","B"],["B","C"]],"supports":[["A","pin",0],["C","pin",90]],"rcols":[["A",[1.0,0.0]],["A",[0.0,1.0]],["C",[1.0,0.0]],["C",[0.0,1.0]]],"explain":"<b>Internal:</b> m = 2 and 2j \u2212 3 = 3, so m &lt; 2j \u2212 3. Two bars meeting at a joint hinge freely, so the members alone are not a rigid body \u2014 <b>internally unstable</b>. The truss is really two rigid pieces joined by an internal hinge, which is one equation of condition: e<sub>c</sub> = 1. <b>External:</b> Restraining every rigid piece needs r \u2265 3 + e<sub>c</sub> = 4, and r = 4. The reaction lines are neither all parallel nor all concurrent, and every piece of the truss is held \u2014 <b>externally stable</b>. <b>Degree:</b> m + r = 2 + 4 = 6 and 2j = 6, so m + r \u2212 2j = 0. The truss is stable, so the count is the real answer: it is <b>statically determinate</b>.","internal_stable":false,"external_stable":true,"answer_internal":"unstable","answer_external":"stable"},{"id":42,"shape":"BF","m":2,"j":3,"r":4,"coords":{"A":[0,0],"B":[2,4],"C":[6,2]},"members":[["A","B"],["B","C"]],"supports":[["A","pin",0],["C","pin",90]],"rcols":[["A",[1.0,0.0]],["A",[0.0,1.0]],["C",[1.0,0.0]],["C",[0.0,1.0]]],"explain":"<b>Internal:</b> m = 2 and 2j \u2212 3 = 3, so m &lt; 2j \u2212 3. Two bars meeting at a joint hinge freely, so the members alone are not a rigid body \u2014 <b>internally unstable</b>. The truss is really two rigid pieces joined by an internal hinge, which is one equation of condition: e<sub>c</sub> = 1. <b>External:</b> Restraining every rigid piece needs r \u2265 3 + e<sub>c</sub> = 4, and r = 4. The reaction lines are neither all parallel nor all concurrent, and every piece of the truss is held \u2014 <b>externally stable</b>. <b>Degree:</b> m + r = 2 + 4 = 6 and 2j = 6, so m + r \u2212 2j = 0. The truss is stable, so the count is the real answer: it is <b>statically determinate</b>.","internal_stable":false,"external_stable":true,"answer_internal":"unstable","answer_external":"stable"},{"id":44,"shape":"BD","m":2,"j":3,"r":4,"coords":{"A":[0,0],"B":[3,0],"C":[6,0]},"members":[["A","B"],["B","C"]],"supports":[["A","pin",0],["C","pin",0]],"rcols":[["A",[1.0,0.0]],["A",[0.0,1.0]],["C",[1.0,0.0]],["C",[0.0,1.0]]],"explain":"<b>Internal:</b> m = 2 and 2j \u2212 3 = 3, so m &lt; 2j \u2212 3. Two bars meeting at a joint hinge freely, so the members alone are not a rigid body \u2014 <b>internally unstable</b>. The truss is really two rigid pieces joined by an internal hinge, which is one equation of condition: e<sub>c</sub> = 1. <b>External:</b> r = 4 meets the count, but all three joints are collinear, so the supports cannot stop the interior joint deflecting perpendicular to the two bars. Joint <b>B</b> can still move \u2014 <b>externally unstable</b>. <b>Degree:</b> m + r = 2 + 4 = 6 and 2j = 6, so m + r \u2212 2j = 0. The count passes, but m + r \u2265 2j is necessary and not sufficient: the external instability above leaves a mechanism. The truss is <b>unstable</b>, and no degree of indeterminacy applies.","internal_stable":false,"external_stable":false,"answer_internal":"unstable","answer_external":"unstable"},{"id":46,"shape":"BA","m":2,"j":3,"r":4,"coords":{"A":[0,0],"B":[3,3],"C":[6,0]},"members":[["A","B"],["B","C"]],"supports":[["A","pin",0],["B","pin",180]],"rcols":[["A",[1.0,0.0]],["A",[0.0,1.0]],["B",[1.0,0.0]],["B",[0.0,1.0]]],"explain":"<b>Internal:</b> m = 2 and 2j \u2212 3 = 3, so m &lt; 2j \u2212 3. Two bars meeting at a joint hinge freely, so the members alone are not a rigid body \u2014 <b>internally unstable</b>. The truss is really two rigid pieces joined by an internal hinge, which is one equation of condition: e<sub>c</sub> = 1. <b>External:</b> r = 4 meets the count, but every support sits on one bar, leaving the bar at joint C held at a single end. Joint <b>C</b> can still move \u2014 <b>externally unstable</b>. <b>Degree:</b> m + r = 2 + 4 = 6 and 2j = 6, so m + r \u2212 2j = 0. The count passes, but m + r \u2265 2j is necessary and not sufficient: the external instability above leaves a mechanism. The truss is <b>unstable</b>, and no degree of indeterminacy applies.","internal_stable":false,"external_stable":false,"answer_internal":"unstable","answer_external":"unstable"}];
+const LS = 'stability-trials-v1';
+const ISI = 500;                     // blank fixation between trials, ms
+const Q = [
+  {id:'internal', label:'Internal stability',
+   ask:'Is this truss internally stable?',
+   sub:'Judge the members alone: do they form a rigid body?',
+   yes:'Internally stable', no:'Internally unstable', field:'answer_internal'},
+  {id:'external', label:'External stability',
+   ask:'Is this truss externally stable?',
+   sub:'Judge the supports: do they restrain every rigid piece?',
+   yes:'Externally stable', no:'Externally unstable', field:'answer_external'}
+];
+
+/* ---------------- drawing ---------------- */
+const W = 520, H = 360, PAD = 70;
+function frame(c, w, h, pad){
+  w = w || W; h = h || H; pad = pad || PAD;
+  const pts = Object.values(c.coords);
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const bw = x1 - x0, bh = y1 - y0;
+  let s = Math.min(bw > 1e-9 ? (w - 2*pad)/bw : 1e9, bh > 1e-9 ? (h - 2*pad)/bh : 1e9, 68);
+  const ox = w/2 - bw*s/2 - x0*s, oy = h/2 + bh*s/2 + y0*s;
+  return {s, X: x => ox + x*s, Y: y => oy - y*s, cx:(x0+x1)/2, cy:(y0+y1)/2};
+}
+function ground(y, k){
+  let s = `<line x1="${-27*k}" y1="${y}" x2="${27*k}" y2="${y}" stroke="var(--ink)" stroke-width="${1.9*k}"/>`;
+  for(let x = -21*k; x <= 27*k; x += 8*k)
+    s += `<line x1="${x}" y1="${y}" x2="${x-6*k}" y2="${y+8*k}" stroke="var(--ink)"
+           stroke-width="${1.3*k}" opacity=".7"/>`;
+  return s;
+}
+function supportMark(kind, rot, px, py, k){
+  k = k || 1;
+  let inner;
+  if(kind === 'pin'){
+    inner = `<path d="M0 0 L${-15*k} ${26*k} L${15*k} ${26*k} Z" fill="var(--sheet)" stroke="var(--ink)"
+              stroke-width="${1.9*k}" stroke-linejoin="round"/>` + ground(26*k, k);
+  }else{
+    inner = `<path d="M0 0 L${-15*k} ${21*k} L${15*k} ${21*k} Z" fill="var(--sheet)" stroke="var(--ink)"
+              stroke-width="${1.9*k}" stroke-linejoin="round"/>`
+          + `<circle cx="${-8*k}" cy="${25.6*k}" r="${4.4*k}" fill="var(--sheet)" stroke="var(--ink)" stroke-width="${1.6*k}"/>`
+          + `<circle cx="${8*k}" cy="${25.6*k}" r="${4.4*k}" fill="var(--sheet)" stroke="var(--ink)" stroke-width="${1.6*k}"/>`
+          + ground(30.4*k, k);
+  }
+  return `<g transform="translate(${px.toFixed(2)},${py.toFixed(2)}) rotate(${-rot})">${inner}</g>`;
+}
+function trussSVG(c, opt){
+  opt = opt || {};
+  const w = opt.w || W, h = opt.h || H, k = opt.k || 1;
+  const f = frame(c, w, h, opt.pad || PAD);
+  const P = {}; ['A','B','C'].forEach(n => P[n] = [f.X(c.coords[n][0]), f.Y(c.coords[n][1])]);
+  let o = '';
+  if(opt.lines) c.rcols.forEach(([jt, d]) => {
+    const [x,y] = P[jt], L = 700, dx = d[0]*f.s, dy = -d[1]*f.s, n = Math.hypot(dx,dy);
+    o += `<line x1="${x-dx/n*L}" y1="${y-dy/n*L}" x2="${x+dx/n*L}" y2="${y+dy/n*L}"
+           stroke="var(--accent)" stroke-width="${1.3*k}" stroke-dasharray="${7*k} ${5*k}" opacity=".5"/>`;
+  });
+  c.supports.forEach(([jt, kind, rot]) => o += supportMark(kind, rot, P[jt][0], P[jt][1], k));
+  c.members.forEach(([p,q]) => {
+    o += `<line x1="${P[p][0]}" y1="${P[p][1]}" x2="${P[q][0]}" y2="${P[q][1]}"
+           stroke="var(--steel)" stroke-width="${6*k}" stroke-linecap="round"/>`;
+  });
+  ['A','B','C'].forEach(n => {
+    const [x,y] = P[n];
+    o += `<circle cx="${x}" cy="${y}" r="${6.6*k}" fill="var(--sheet)" stroke="var(--ink)" stroke-width="${2.1*k}"/>`;
+    let lx = x - f.X(f.cx), ly = y - f.Y(f.cy), L = Math.hypot(lx, ly);
+    if(L < 1){ lx = 0; ly = -1; L = 1; }
+    lx /= L; ly /= L;
+    const sp = c.supports.find(s => s[0] === n);
+    if(sp){
+      const r = sp[2]*Math.PI/180, sx = Math.sin(r), sy = Math.cos(r);
+      if(lx*sx + ly*sy > 0.35){
+        lx = -sy; ly = sx;
+        if(lx*(x - f.X(f.cx)) + ly*(y - f.Y(f.cy)) < 0){ lx = -lx; ly = -ly; }
+      }
+    }
+    o += `<text x="${x+lx*21*k}" y="${y+ly*21*k+5*k}" text-anchor="middle" font-size="${14*k}"
+           fill="var(--ink)">${n}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" class="draw" role="img"
+           aria-label="Truss diagram, case ${c.id}">${o}</svg>`;
+}
+
+/* ---------------- state ---------------- */
+const $ = id => document.getElementById(id);
+const wrap = $('wrap');
+let pid = '', sess = '', order = [[],[]], round = 0, qi = 0, trials = [];
+let t0 = 0, blurMs = 0, blurAt = 0, clean = true, locked = true, armed = false;
+
+function shuffle(a){
+  a = a.slice();
+  for(let i = a.length-1; i > 0; i--){ const k = Math.floor(Math.random()*(i+1)); [a[i],a[k]] = [a[k],a[i]]; }
+  return a;
+}
+function newSession(){
+  const base = CASES.map((_, i) => i);
+  order[0] = shuffle(base);
+  let guard = 0;
+  do { order[1] = shuffle(base); guard++; }
+  while(guard < 500 && order[1].some((v, i) => v === order[0][i]));   // no truss in the same slot twice
+  sess = new Date().toISOString().replace(/[:.]/g, '-');
+  round = 0; qi = 0; trials = [];
+}
+
+/* ---------------- focus hygiene ---------------- */
+addEventListener('blur', () => { if(!locked){ blurAt = performance.now(); clean = false; } });
+addEventListener('focus', () => { if(blurAt){ blurMs += performance.now() - blurAt; blurAt = 0; } });
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){ if(!locked && !blurAt){ blurAt = performance.now(); clean = false; } }
+  else if(blurAt){ blurMs += performance.now() - blurAt; blurAt = 0; }
+});
+
+/* ---------------- screens ---------------- */
+function intro(){
+  wrap.className = 'wrap';
+  wrap.innerHTML = `
+    <h1>Stability Trials</h1>
+    <p class="lead" style="margin-top:8px">Ten trusses, judged twice. Round one asks only about internal
+      stability; round two shows the same ten in a different order and asks only about external stability.
+      Twenty decisions in all. Your response time is recorded for each one.</p>
+    <div class="card">
+      <h2>Before you start</h2>
+      <p>Answer as quickly as you can without guessing. There is no feedback until the end, and you cannot
+        go back &mdash; that keeps the timings comparable.</p>
+      <p>Use the mouse, or the <code>F</code> and <code>J</code> keys. A <code>+</code> appears for half a
+        second before each truss; that is the cue to look at the centre of the frame.</p>
+      <p class="note">Leaving the window mid-question is recorded, so those trials can be filtered out later.</p>
+      <div class="row" style="margin-top:16px">
+        <label for="pid">Participant ID (optional)</label>
+        <input type="text" id="pid" placeholder="e.g. S014" autocomplete="off">
+      </div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn" id="go">Start round 1</button>
+      </div>
+    </div>
+    ${savedCount() ? `<p class="note">${savedCount()} completed session${savedCount()>1?'s':''} stored on
+      this computer. <button class="btn ghost" id="exp" style="font-size:13px;padding:6px 12px">Export all
+      as CSV</button></p>` : ''}`;
+  $('go').onclick = () => { pid = ($('pid').value || '').trim(); newSession(); roundIntro(); };
+  $('pid').addEventListener('keydown', e => { if(e.key === 'Enter') $('go').click(); });
+  if($('exp')) $('exp').onclick = exportAll;
+}
+
+function roundIntro(){
+  const q = Q[round];
+  wrap.className = 'wrap';
+  wrap.innerHTML = `
+    <div class="meta"><span>Round ${round+1} of 2</span><span>${CASES.length} trusses</span></div>
+    <h1>${q.label}</h1>
+    <div class="card" style="margin-top:16px">
+      <p style="font-size:16px">${q.sub}</p>
+      <p class="note">${round === 0
+        ? 'Ignore the supports entirely this round. Look only at whether the members themselves form a rigid body.'
+        : 'The same ten trusses return in a new order. This round ignore nothing — but judge only whether the supports hold every rigid piece, not whether the truss is determinate.'}</p>
+      <div class="keys" style="margin-top:16px;pointer-events:none;opacity:.65">
+        <button disabled>${q.yes}<kbd>F</kbd></button>
+        <button disabled>${q.no}<kbd>J</kbd></button>
+      </div>
+      <div class="row" style="margin-top:20px"><button class="btn" id="go">Begin</button></div>
+    </div>`;
+  $('go').onclick = () => { qi = 0; trial(); };
+  $('go').focus();
+}
+
+function trial(){
+  const q = Q[round], c = CASES[order[round][qi]];
+  locked = true; armed = false; blurMs = 0; blurAt = 0; clean = true;
+  wrap.className = 'wrap';
+  wrap.innerHTML = `
+    <div class="bar"><i style="width:${(qi/CASES.length*100).toFixed(1)}%"></i></div>
+    <div class="meta"><span>Round ${round+1} &middot; ${q.label}</span><span>${qi+1} / ${CASES.length}</span></div>
+    <p class="ask">${q.ask}<small>${q.sub}</small></p>
+    <div class="stage"><div class="inner">
+      ${trussSVG(c)}
+      <div class="fix" id="fix">+</div>
+    </div></div>
+    <div class="keys">
+      <button id="kY" disabled>${q.yes}<kbd>F</kbd></button>
+      <button id="kN" disabled>${q.no}<kbd>J</kbd></button>
+    </div>`;
+  $('kY').onclick = () => answer('stable', 'mouse');
+  $('kN').onclick = () => answer('unstable', 'mouse');
+  setTimeout(() => {
+    $('fix').hidden = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      t0 = performance.now(); locked = false; armed = true;
+      $('kY').disabled = false; $('kN').disabled = false;
+    }));
+  }, ISI);
+}
+
+function answer(v, how){
+  if(!armed) return;
+  armed = false; locked = true;
+  if(blurAt){ blurMs += performance.now() - blurAt; blurAt = 0; }
+  const rt = performance.now() - t0;
+  const q = Q[round], c = CASES[order[round][qi]];
+  trials.push({
+    round: round+1, type: q.id, position: qi+1, case_id: c.id, shape: c.shape,
+    m: c.m, j: c.j, r: c.r, correct: c[q.field], response: v,
+    is_correct: v === c[q.field] ? 1 : 0,
+    rt_ms: Math.round(rt), blur_ms: Math.round(blurMs), focus_clean: clean ? 1 : 0, input: how
+  });
+  qi++;
+  if(qi < CASES.length) trial();
+  else if(round === 0){ round = 1; roundIntro(); }
+  else finish();
+}
+
+document.addEventListener('keydown', e => {
+  if(!armed) return;
+  const k = e.key.toLowerCase();
+  if(k === 'f' || k === '1' || k === 'arrowleft'){ e.preventDefault(); answer('stable', 'key'); }
+  else if(k === 'j' || k === '2' || k === 'arrowright'){ e.preventDefault(); answer('unstable', 'key'); }
+});
+
+/* ---------------- report ---------------- */
+const median = a => { if(!a.length) return 0; const s = a.slice().sort((x,y) => x-y), h = s.length>>1;
+  return s.length % 2 ? s[h] : (s[h-1]+s[h])/2; };
+const mean = a => a.length ? a.reduce((x,y) => x+y, 0)/a.length : 0;
+const f1 = n => (n/1000).toFixed(2);
+
+function statsFor(type){
+  const t = trials.filter(x => x.type === type);
+  const rt = t.map(x => x.rt_ms);
+  return {n: t.length, acc: t.filter(x => x.is_correct).length,
+          med: median(rt), avg: mean(rt), min: Math.min(...rt), max: Math.max(...rt),
+          medCorrect: median(t.filter(x => x.is_correct).map(x => x.rt_ms)),
+          medWrong: median(t.filter(x => !x.is_correct).map(x => x.rt_ms))};
+}
+
+const COLS = ['participant','session','round','question_type','position','case_id','shape','m','j','r',
+              'correct_answer','response','is_correct','rt_ms','blur_ms','focus_clean','input_method'];
+function rows(list, who, when){
+  return list.map(t => [who || 'anon', when, t.round, t.type, t.position, t.case_id, t.shape,
+    t.m, t.j, t.r, t.correct, t.response, t.is_correct, t.rt_ms, t.blur_ms, t.focus_clean, t.input]);
+}
+const csv = rs => [COLS.join(',')].concat(rs.map(r => r.join(','))).join('\n');
+
+function saveSession(){
+  try{
+    const all = JSON.parse(localStorage.getItem(LS) || '[]');
+    all.push({pid, sess, trials});
+    localStorage.setItem(LS, JSON.stringify(all));
+  }catch(e){}
+}
+function savedCount(){
+  try{ return (JSON.parse(localStorage.getItem(LS) || '[]')).length; }catch(e){ return 0; }
+}
+function download(name, text){
+  const b = new Blob([text], {type:'text/csv;charset=utf-8'});
+  const u = URL.createObjectURL(b), a = document.createElement('a');
+  a.href = u; a.download = name; document.body.appendChild(a); a.click();
+  a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1500);
+}
+function exportAll(){
+  let all = [];
+  try{ all = JSON.parse(localStorage.getItem(LS) || '[]'); }catch(e){}
+  if(!all.length) return;
+  const rs = all.flatMap(s => rows(s.trials, s.pid, s.sess));
+  download('stability-trials-all-sessions.csv', csv(rs));
+}
+
+function rtChart(){
+  const w = 700, h = 230, L = 52, R = 14, T = 16, B = 46;
+  const peak = Math.max(...trials.map(t => t.rt_ms)) * 1.08;
+  const step = 10 ** Math.floor(Math.log10(peak/3));
+  const tick = [1,2,2.5,5,10].map(x => x*step).find(x => peak/x <= 4) || peak/4;
+  const iw = w - L - R, bw = iw/trials.length;
+  const Y = v => T + (h - T - B) * (1 - v/peak);
+  let o = '';
+  for(let v = 0; v <= peak; v += tick){
+    o += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${w-R}" y2="${Y(v).toFixed(1)}"
+           stroke="var(--rule-soft)" stroke-width="1"/>`
+       + `<text x="${L-8}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="10.5"
+           fill="var(--muted)">${f1(v)}s</text>`;
+  }
+  trials.forEach((t, i) => {
+    const x = L + i*bw + bw*0.17, bwid = bw*0.66;
+    o += `<rect x="${x.toFixed(1)}" y="${Y(t.rt_ms).toFixed(1)}" width="${bwid.toFixed(1)}"
+           height="${(Y(0)-Y(t.rt_ms)).toFixed(1)}" rx="1.5"
+           fill="${t.is_correct ? 'var(--accent)' : 'var(--no)'}"><title>Round ${t.round}, position
+           ${t.position}: case ${t.case_id}, ${f1(t.rt_ms)}s, ${t.is_correct?'correct':'wrong'}</title></rect>`;
+  });
+  [0,1].forEach(ri => {
+    const seg = trials.filter(t => t.round === ri+1);
+    if(!seg.length) return;
+    const i0 = trials.indexOf(seg[0]), x1 = L + i0*bw, x2 = x1 + seg.length*bw;
+    const med = median(seg.map(t => t.rt_ms));
+    o += `<line x1="${x1.toFixed(1)}" y1="${Y(med).toFixed(1)}" x2="${x2.toFixed(1)}" y2="${Y(med).toFixed(1)}"
+           stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="6 4"/>`
+       + `<text x="${(x1+4).toFixed(1)}" y="${(Y(med)-6).toFixed(1)}" font-size="10.5"
+           fill="var(--ink)">median ${f1(med)}s</text>`
+       + `<text x="${((x1+x2)/2).toFixed(1)}" y="${h-16}" text-anchor="middle" font-size="11"
+           fill="var(--muted)">Round ${ri+1} &mdash; ${Q[ri].label.toLowerCase()}</text>`;
+    if(ri === 1) o += `<line x1="${x1.toFixed(1)}" y1="${T}" x2="${x1.toFixed(1)}" y2="${Y(0)}"
+                        stroke="var(--rule)" stroke-width="1"/>`;
+  });
+  o += `<line x1="${L}" y1="${Y(0)}" x2="${w-R}" y2="${Y(0)}" stroke="var(--rule)" stroke-width="1.2"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="display:block;width:100%;height:auto"
+           role="img" aria-label="Response time for each of the twenty trials">${o}</svg>`;
+}
+
+function finish(){
+  saveSession();
+  const si = statsFor('internal'), se = statsFor('external');
+  const n = CASES.length;
+  const data = csv(rows(trials, pid, sess));
+  wrap.className = 'wrap wide';
+  wrap.innerHTML = `
+    <div class="meta"><span>Session complete</span><span>${pid ? pid + ' &middot; ' : ''}${sess}</span></div>
+    <h1>Your results</h1>
+
+    <div class="tiles" style="margin-top:18px">
+      <div><span>Internal correct</span><b>${si.acc} / ${n}</b></div>
+      <div><span>External correct</span><b>${se.acc} / ${n}</b></div>
+      <div><span>Internal median</span><b>${f1(si.med)}s</b></div>
+      <div><span>External median</span><b>${f1(se.med)}s</b></div>
+      <div><span>Total time on task</span><b>${f1(trials.reduce((a,t) => a+t.rt_ms, 0))}s</b></div>
+    </div>
+
+    <div class="card">
+      <h2>Response time, trial by trial</h2>
+      ${rtChart()}
+      <p class="note" style="margin-top:10px">Blue is a correct call, red a wrong one. The dashed line is
+        the median for that round.</p>
+    </div>
+
+    <div class="card">
+      <h2>Summary by question type</h2>
+      <div class="scroll"><table>
+        <tr><th>Question type</th><th>n</th><th>Correct</th><th>Accuracy</th><th>Median</th><th>Mean</th>
+            <th>Fastest</th><th>Slowest</th><th>Median when right</th><th>Median when wrong</th></tr>
+        ${[['Internal stability', si], ['External stability', se]].map(([lab, s]) => `<tr>
+          <td>${lab}</td><td class="n">${s.n}</td><td class="n">${s.acc}</td>
+          <td class="n">${Math.round(s.acc/s.n*100)}%</td><td class="n">${f1(s.med)}s</td>
+          <td class="n">${f1(s.avg)}s</td><td class="n">${f1(s.min)}s</td><td class="n">${f1(s.max)}s</td>
+          <td class="n">${s.acc ? f1(s.medCorrect)+'s' : '—'}</td>
+          <td class="n">${s.n-s.acc ? f1(s.medWrong)+'s' : '—'}</td></tr>`).join('')}
+      </table></div>
+    </div>
+
+    <div class="card">
+      <h2>Trial-level data</h2>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn" id="dl">Download CSV</button>
+        <button class="btn ghost" id="cp">Copy to clipboard</button>
+        <button class="btn ghost" id="dlAll">Export all ${savedCount()} session${savedCount()>1?'s':''}</button>
+      </div>
+      <div class="scroll" style="max-height:260px;overflow-y:auto"><table>
+        <tr>${['Rnd','Type','Pos','Case','Shape','m','r','Correct','Response','Hit','RT (ms)','Focus']
+          .map(h => `<th>${h}</th>`).join('')}</tr>
+        ${trials.map(t => `<tr>
+          <td class="n">${t.round}</td><td>${t.type}</td><td class="n">${t.position}</td>
+          <td class="n">${t.case_id}</td><td>${t.shape}</td><td class="n">${t.m}</td><td class="n">${t.r}</td>
+          <td>${t.correct}</td><td class="${t.is_correct?'y':'x'}">${t.response}</td>
+          <td class="n ${t.is_correct?'y':'x'}">${t.is_correct?'✓':'✗'}</td>
+          <td class="n">${t.rt_ms}</td><td class="n">${t.focus_clean?'ok':'left'}</td></tr>`).join('')}
+      </table></div>
+      <p class="note" style="margin-top:10px">Columns in the export:
+        <code>${COLS.join(', ')}</code>. One row per trial, 20 per session.
+        <code>focus_clean = 0</code> marks a trial where the window lost focus, with the away time in
+        <code>blur_ms</code>.</p>
+      <textarea id="raw" readonly aria-label="CSV data">${data}</textarea>
+    </div>
+
+    <div class="card">
+      <h2>What each truss was</h2>
+      <div class="rev">${CASES.map(c => {
+        const ti = trials.find(t => t.case_id === c.id && t.type === 'internal');
+        const te = trials.find(t => t.case_id === c.id && t.type === 'external');
+        if(!ti || !te) return '';
+        const line = (lab, t) => `<div class="l"><span>${lab}</span>
+          <b class="${t.is_correct ? '' : 'x'}" style="color:${t.is_correct?'var(--ok)':'var(--no)'}">
+          ${t.correct}${t.is_correct ? '' : ' — you said ' + t.response}</b></div>`;
+        return `<div class="c">${trussSVG(c, {w:340, h:250, k:0.78, pad:54, lines: !c.external_stable})}
+          <div class="b"><h3>Case ${c.id} &middot; ${c.m}-bar &middot; r = ${c.r}</h3>
+          ${line('Internal', ti)}${line('External', te)}
+          <div class="l" style="color:var(--muted)"><span>Your time</span>
+            <b style="font-family:var(--f-data);font-weight:500">${f1(ti.rt_ms)}s / ${f1(te.rt_ms)}s</b></div>
+          <details><summary>Reasoning</summary><div>${c.explain}</div></details></div></div>`;
+      }).join('')}</div>
+      <p class="note" style="margin-top:12px">Dashed blue lines mark reaction lines of action, drawn on the
+        externally unstable cases so the parallel and concurrent arrangements are visible.</p>
+    </div>
+
+    <div class="row"><button class="btn ghost" id="again">Run it again</button></div>`;
+
+  $('dl').onclick = () => download(`stability-trials-${pid || 'anon'}-${sess}.csv`, data);
+  $('dlAll').onclick = exportAll;
+  $('cp').onclick = async () => {
+    try{ await navigator.clipboard.writeText(data); $('cp').textContent = 'Copied'; }
+    catch(e){ $('raw').select(); $('cp').textContent = 'Selected — press Ctrl+C'; }
+    setTimeout(() => $('cp').textContent = 'Copy to clipboard', 2200);
+  };
+  $('again').onclick = intro;
+}
+
+intro();
+</script>
+</body>
+</html>
